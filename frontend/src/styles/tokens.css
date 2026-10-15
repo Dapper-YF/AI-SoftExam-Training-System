@@ -1,0 +1,54 @@
+:root {
+  --color-indigo-deep: #173B7A;
+  --color-cobalt: #1769E0;
+  --color-teal: #12A89D;
+  --color-amber: #F59E0B;
+  --color-coral: #EF5B5B;
+  --color-cool-gray: #F4F7FB;
+  --color-ink: #172033;
+
+  --color-brand: var(--color-indigo-deep);
+  --color-brand-active: #102E62;
+  --color-practice-accent: var(--color-cobalt);
+  --color-practice-soft: #EAF2FE;
+  --color-essay-accent: var(--color-indigo-deep);
+  --color-essay-soft: #EDF1F8;
+  --color-success: var(--color-teal);
+  --color-warning: var(--color-amber);
+  --color-danger: var(--color-coral);
+  --color-page-canvas: var(--color-cool-gray);
+  --color-surface: #FFFFFF;
+  --color-text-primary: var(--color-ink);
+  --color-text-secondary: #526071;
+  --color-text-muted: #7C8898;
+  --color-border: #DCE4EE;
+  --color-border-strong: #C9D4E1;
+
+  --platform-header-height: 72px;
+  --platform-sidebar-width: 232px;
+  --platform-sidebar-collapsed-width: 72px;
+  --platform-page-padding: clamp(20px, 2vw, 32px);
+  --platform-radius: 8px;
+  --platform-shadow: 0 8px 24px rgb(23 59 122 / 8%);
+
+  /* Legacy aliases remain during the independent product-page migrations. */
+  --platform-blue: var(--color-cobalt);
+  --platform-blue-hover: #0F59C7;
+  --platform-blue-soft: var(--color-practice-soft);
+  --platform-cyan: var(--color-teal);
+  --platform-green: var(--color-teal);
+  --platform-orange: var(--color-amber);
+  --platform-red: var(--color-coral);
+  --platform-text: var(--color-text-primary);
+  --platform-text-secondary: var(--color-text-secondary);
+  --platform-text-muted: var(--color-text-muted);
+  --platform-border: var(--color-border);
+  --platform-border-strong: var(--color-border-strong);
+  --platform-surface: var(--color-surface);
+  --platform-canvas: var(--color-page-canvas);
+  --platform-font-xs: 12px;
+  --platform-font-sm: 14px;
+  --platform-font-md: 16px;
+  --platform-font-lg: 18px;
+  --platform-font-xl: 22px;
+}

@@ -1,0 +1,16 @@
+package com.aiexam.app.migration.deploymentcontrol;
+
+public enum AttemptState {
+  APPROVED,
+  LOCKED,
+  NONCE_CONSUMED,
+  FLYWAY_STARTED,
+  EXPAND_COMPLETED,
+  DML_STARTED,
+  DML_COMPLETED,
+  HARDENING_STARTED,
+  COMPLETED,
+  PRE_FLYWAY_ABORTED,
+  FAILED_A_REPAIRABLE,
+  FAILED_B_RESTORE_REQUIRED
+}

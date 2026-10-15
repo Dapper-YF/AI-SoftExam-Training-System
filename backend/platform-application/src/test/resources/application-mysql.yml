@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: ${MYSQL_TEST_URL}
+    username: ${MYSQL_TEST_USERNAME:root}
+    password: ${MYSQL_TEST_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  flyway:
+    enabled: false

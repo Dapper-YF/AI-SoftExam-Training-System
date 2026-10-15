@@ -1,0 +1,6 @@
+aiexam:
+  auth:
+    dev-accounts:
+      enabled: true
+    dev-seed-username-login:
+      enabled: true

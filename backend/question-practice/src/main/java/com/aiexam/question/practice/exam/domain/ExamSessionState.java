@@ -1,0 +1,15 @@
+package com.aiexam.question.practice.exam.domain;
+
+public enum ExamSessionState {
+  CREATED,
+  CANDIDATE_LOGGED_IN,
+  CANDIDATE_CONFIRMED,
+  RULE_READING,
+  WAITING_START,
+  LOADING_PAPER,
+  IN_PROGRESS,
+  SUBMITTING,
+  SUBMITTED,
+  SUBJECT_TRANSITION,
+  COMPLETED
+}

@@ -1,0 +1,11 @@
+.git
+.idea
+.m2
+target
+node_modules
+dist
+playwright-report
+test-results
+*.log
+var
+backend/var

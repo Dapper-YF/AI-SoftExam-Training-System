@@ -1,0 +1,141 @@
+CREATE TABLE ai_model_config (
+  id BIGINT NOT NULL,
+  model_code VARCHAR(64) NOT NULL,
+  provider_code VARCHAR(64) NOT NULL,
+  model_name VARCHAR(128) NOT NULL,
+  endpoint_ref VARCHAR(255) NULL,
+  default_params JSON NULL,
+  enabled TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL,
+  updated_at DATETIME(3) NOT NULL,
+  created_by BIGINT NULL,
+  updated_by BIGINT NULL,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_ai_model_code (model_code),
+  KEY idx_ai_model_provider (provider_code, enabled)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='AI模型配置';
+
+CREATE TABLE ai_prompt_template (
+  id BIGINT NOT NULL,
+  scenario VARCHAR(96) NOT NULL,
+  template_code VARCHAR(96) NOT NULL,
+  template_version VARCHAR(32) NOT NULL,
+  template_content LONGTEXT NOT NULL,
+  variables_json JSON NULL,
+  enabled TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL,
+  updated_at DATETIME(3) NOT NULL,
+  created_by BIGINT NULL,
+  updated_by BIGINT NULL,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_ai_prompt_template_version (template_code, template_version),
+  KEY idx_ai_prompt_scenario (scenario, enabled)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Prompt模板';
+
+CREATE TABLE ai_task (
+  id BIGINT NOT NULL,
+  user_id BIGINT NULL,
+  biz_type VARCHAR(64) NOT NULL,
+  biz_id BIGINT NULL,
+  scenario VARCHAR(96) NOT NULL,
+  model_code VARCHAR(64) NULL,
+  prompt_template_id BIGINT NULL,
+  request_hash VARCHAR(160) NULL,
+  request_json JSON NULL,
+  status VARCHAR(24) NOT NULL DEFAULT 'PENDING',
+  priority INT NOT NULL DEFAULT 5,
+  retry_count INT NOT NULL DEFAULT 0,
+  max_retry_count INT NOT NULL DEFAULT 3,
+  started_at DATETIME(3) NULL,
+  completed_at DATETIME(3) NULL,
+  error_message VARCHAR(500) NULL,
+  created_at DATETIME(3) NOT NULL,
+  updated_at DATETIME(3) NOT NULL,
+  created_by BIGINT NULL,
+  updated_by BIGINT NULL,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY idx_ai_task_biz (biz_type, biz_id, scenario),
+  KEY idx_ai_task_status (status, priority, created_at),
+  KEY idx_ai_task_user (user_id, scenario, created_at),
+  KEY idx_ai_task_hash (request_hash)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='AI调用任务';
+
+CREATE TABLE ai_call_log (
+  id BIGINT NOT NULL,
+  task_id BIGINT NULL,
+  user_id BIGINT NULL,
+  scenario VARCHAR(96) NOT NULL,
+  model_code VARCHAR(64) NOT NULL,
+  request_summary TEXT NULL,
+  response_summary TEXT NULL,
+  prompt_tokens INT NULL,
+  completion_tokens INT NULL,
+  total_tokens INT NULL,
+  duration_ms INT NULL,
+  success TINYINT NOT NULL DEFAULT 0,
+  error_code VARCHAR(96) NULL,
+  error_message VARCHAR(500) NULL,
+  created_at DATETIME(3) NOT NULL,
+  PRIMARY KEY (id),
+  KEY idx_ai_call_log_task (task_id),
+  KEY idx_ai_call_log_user (user_id, scenario, created_at),
+  KEY idx_ai_call_log_model (model_code, created_at),
+  KEY idx_ai_call_log_success (success, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='AI调用日志';
+
+CREATE TABLE ai_result_cache (
+  id BIGINT NOT NULL,
+  cache_key VARCHAR(160) NOT NULL,
+  scenario VARCHAR(96) NOT NULL,
+  model_code VARCHAR(64) NULL,
+  prompt_version VARCHAR(64) NULL,
+  input_hash VARCHAR(160) NOT NULL,
+  result_content LONGTEXT NOT NULL,
+  result_json JSON NULL,
+  expires_at DATETIME(3) NULL,
+  created_at DATETIME(3) NOT NULL,
+  updated_at DATETIME(3) NOT NULL,
+  created_by BIGINT NULL,
+  updated_by BIGINT NULL,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_ai_result_cache_key (cache_key),
+  KEY idx_ai_result_cache_scenario (scenario, model_code, expires_at),
+  KEY idx_ai_result_cache_input (input_hash)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='AI结果缓存';
+
+CREATE TABLE ai_rate_limit_policy (
+  id BIGINT NOT NULL,
+  policy_code VARCHAR(96) NOT NULL,
+  policy_name VARCHAR(128) NOT NULL,
+  scope_type VARCHAR(32) NOT NULL COMMENT 'USER/ROLE/MODEL/SCENARIO',
+  scope_value VARCHAR(128) NOT NULL,
+  window_seconds INT NOT NULL,
+  max_count INT NOT NULL,
+  enabled TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL,
+  updated_at DATETIME(3) NOT NULL,
+  created_by BIGINT NULL,
+  updated_by BIGINT NULL,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_ai_rate_policy_code (policy_code),
+  KEY idx_ai_rate_policy_scope (scope_type, scope_value, enabled)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='AI限流策略';
+
+CREATE TABLE ai_rate_limit_record (
+  id BIGINT NOT NULL,
+  limit_key VARCHAR(180) NOT NULL,
+  policy_id BIGINT NULL,
+  window_start DATETIME(3) NOT NULL,
+  window_end DATETIME(3) NOT NULL,
+  current_count INT NOT NULL DEFAULT 0,
+  created_at DATETIME(3) NOT NULL,
+  updated_at DATETIME(3) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_ai_rate_record_window (limit_key, window_start),
+  KEY idx_ai_rate_record_expire (window_end)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='AI限流计数';

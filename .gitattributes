@@ -1,0 +1,5 @@
+*.jsonl text eol=lf
+*.sql text eol=lf
+backend/deploy/*.jar filter=lfs diff=lfs merge=lfs -text
+docs/数据库设计/ai_exam_platform.sql filter=lfs diff=lfs merge=lfs -text
+docs/原始资料/** filter=lfs diff=lfs merge=lfs -text

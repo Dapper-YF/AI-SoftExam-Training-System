@@ -1,0 +1,113 @@
+services:
+  mysql:
+    image: ${MYSQL_IMAGE:-mysql:8.4}
+    container_name: ai-exam-mysql-dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ai_exam_platform}
+      MYSQL_USER: ${MYSQL_USERNAME:-aiexam_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-123123}
+      TZ: Asia/Shanghai
+    ports:
+      - "${MYSQL_HOST_PORT:-33307}:3306"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+08:00
+    volumes:
+      - mysql-dev-data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    container_name: ai-exam-redis-dev
+    restart: unless-stopped
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:6379"
+    volumes:
+      - redis-dev-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    image: ${BACKEND_IMAGE:-ai-backend:latest}
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend/Dockerfile
+    container_name: ai-exam-backend-dev
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: mysql,dev
+      SPRING_FLYWAY_ENABLED: "false"
+      AIEXAM_SECURITY_DEV_BEARER_ENABLED: ${AIEXAM_SECURITY_DEV_BEARER_ENABLED:-true}
+      AIEXAM_AUTH_DEVACCOUNTS_ENABLED: "true"
+      AIEXAM_AUTH_DEVSEEDUSERNAMELOGIN_ENABLED: "true"
+      AIEXAM_DEV_EXAM_SIMULATOR_ENABLED: "true"
+      EXAM_CREDENTIAL_KEY_V1: ${EXAM_CREDENTIAL_KEY_V1:-dev-exam-credential-key-2026}
+      MYSQL_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-ai_exam_platform}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+      MYSQL_USERNAME: ${MYSQL_USERNAME:-aiexam_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-123123}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUESTION_IMAGE_ROOT: /app/data/question-images
+      LEARNING_RESOURCE_FILE_ROOT: /app/data/learning-resources
+      AI_ASSISTANT_UPLOAD_ROOT: /app/data/ai-assistant
+      OCR_ENDPOINT: http://ocr:18080/ocr
+      OCR_TOKEN: ${OCR_TOKEN:-}
+      EMBEDDING_ENDPOINT: http://embedding:18081/v1/embeddings
+      EMBEDDING_TOKEN: ${EMBEDDING_TOKEN:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL_ID:-Qwen/Qwen3-Embedding-0.6B}
+      EMBEDDING_REVISION: ${EMBEDDING_MODEL_REVISION:-97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3}
+      QDRANT_ENDPOINT: http://qdrant:6333
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-knowledge_published_qwen3_97b0c614}
+      PORTAL_CRAWLER_ENABLED: ${PORTAL_CRAWLER_ENABLED:-false}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      AI_ASSISTANT_ANSWER_PROVIDER: ${AI_ASSISTANT_ANSWER_PROVIDER:-deepseek}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-v4-flash}
+      SPRING_CONFIG_ADDITIONAL_LOCATION: file:/app/config/application-docker.yml
+      SERVER_PORT: ${BACKEND_CONTAINER_PORT:-8000}
+    ports:
+      - "${BACKEND_HOST_PORT:-8000}:${BACKEND_CONTAINER_PORT:-8000}"
+    volumes:
+      - backend-dev-data:/app/data
+      - ./docker/backend/application-docker.yml:/app/config/application-docker.yml:ro
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-ai-frontend:latest}
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend/Dockerfile
+    container_name: ai-exam-frontend-dev
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      # Vite runs in a container but serves the browser on the host. Routing
+      # through the host mapping keeps its proxy origin compatible with the
+      # backend's browser-origin validation.
+      VITE_API_PROXY_TARGET: http://host.docker.internal:${BACKEND_HOST_PORT:-8000}
+      VITE_DEV_PORT: 5173
+    ports:
+      - "${FRONTEND_HOST_PORT:-5173}:5173"
+
+volumes:
+  mysql-dev-data:
+  redis-dev-data:
+  backend-dev-data:

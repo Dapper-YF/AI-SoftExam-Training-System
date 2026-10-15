@@ -1,0 +1,13 @@
+aiexam:
+  question-assets:
+    root: ${QUESTION_IMAGE_ROOT:../../docs/原始资料/题库/images}
+  auth:
+    registration:
+      verification-required: false
+    challenge:
+      dev-delivery:
+        enabled: true
+    dev-accounts:
+      enabled: true
+    dev-seed-username-login:
+      enabled: true

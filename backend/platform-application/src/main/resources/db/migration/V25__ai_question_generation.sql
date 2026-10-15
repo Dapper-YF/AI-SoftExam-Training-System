@@ -1,0 +1,40 @@
+CREATE TABLE ai_generated_question (
+  id BIGINT NOT NULL,
+  created_by BIGINT NOT NULL,
+  qualification_id BIGINT NOT NULL,
+  subject_id BIGINT NOT NULL,
+  knowledge_type VARCHAR(32) NOT NULL,
+  knowledge_id BIGINT NULL,
+  knowledge_name VARCHAR(255) NOT NULL,
+  generation_mode VARCHAR(32) NOT NULL COMMENT 'KNOWLEDGE/WEAKNESS/ADAPTIVE',
+  difficulty VARCHAR(24) NOT NULL,
+  weak_point_summary VARCHAR(500) NULL,
+  target_accuracy DECIMAL(5,2) NULL,
+  prompt_version VARCHAR(32) NOT NULL,
+  model_code VARCHAR(96) NULL,
+  question_json JSON NOT NULL,
+  content_hash CHAR(64) NOT NULL,
+  status VARCHAR(24) NOT NULL DEFAULT 'DRAFT' COMMENT 'DRAFT/APPROVED/REJECTED/OFFLINE',
+  reviewed_by BIGINT NULL,
+  reviewed_at DATETIME(3) NULL,
+  review_note VARCHAR(500) NULL,
+  created_at DATETIME(3) NOT NULL,
+  updated_at DATETIME(3) NOT NULL,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY idx_ai_generated_question_scope (qualification_id, subject_id, knowledge_type, knowledge_id, status),
+  KEY idx_ai_generated_question_creator (created_by, created_at),
+  KEY idx_ai_generated_question_reuse (status, difficulty, updated_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI generated multiple choice questions';
+
+CREATE TABLE ai_generated_question_feedback (
+  id BIGINT NOT NULL,
+  generated_question_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  feedback_code VARCHAR(24) NOT NULL COMMENT 'HELPFUL/INCORRECT/AMBIGUOUS/TOO_EASY/TOO_HARD',
+  comment VARCHAR(500) NULL,
+  created_at DATETIME(3) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_ai_generated_question_feedback_user (generated_question_id, user_id),
+  KEY idx_ai_generated_question_feedback_question (generated_question_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI generated question feedback';

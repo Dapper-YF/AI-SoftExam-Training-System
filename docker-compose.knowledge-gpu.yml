@@ -1,0 +1,83 @@
+services:
+  ocr:
+    build:
+      # Build from the repository root so the gateway source is versioned with the image.
+      # The former docker/ocr context referenced a file that was outside that context.
+      context: ${OCR_BUILD_CONTEXT:-.}
+      dockerfile: ${OCR_DOCKERFILE:-docker/ocr/Dockerfile}
+      args:
+        PADDLE_OCR_MODEL: ${PADDLE_OCR_MODEL:-PP-OCRv5}
+        OCR_MODEL_REVISION: ${OCR_MODEL_REVISION:-paddlex-local-cache}
+    image: aiexam-ocr-paddle:${OCR_IMAGE_TAG:-3.7.0-ppocrv5}
+    restart: unless-stopped
+    gpus: all
+    ports:
+      - "18080:18080"
+    environment:
+      OCR_HOST: 0.0.0.0
+      OCR_PORT: 18080
+      OCR_TOKEN: ${OCR_TOKEN:-}
+      OCR_GPU_REQUIRED: "true"
+      PADDLE_OCR_LANG: ch
+      NVIDIA_VISIBLE_DEVICES: all
+    volumes:
+      - ${AI_RUNTIME_ROOT:-.runtime}/logs/ocr:/var/log/aiexam
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:18080/health')"]
+      interval: 15s
+      timeout: 8s
+      retries: 8
+
+  embedding:
+    build:
+      context: ${EMBEDDING_BUILD_CONTEXT:-./docker/embedding}
+      dockerfile: Dockerfile
+      args:
+        EMBEDDING_MODEL_ID: ${EMBEDDING_MODEL_ID:-Qwen/Qwen3-Embedding-0.6B}
+        EMBEDDING_MODEL_REVISION: ${EMBEDDING_MODEL_REVISION:-97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3}
+        EMBEDDING_MODEL_SHA256: ${EMBEDDING_MODEL_SHA256:-unverified}
+    image: aiexam-embedding-qwen3:${EMBEDDING_IMAGE_TAG:-0.6b}
+    restart: unless-stopped
+    gpus: all
+    ports:
+      - "18081:18081"
+    environment:
+      EMBEDDING_MODEL_ID: ${EMBEDDING_MODEL_ID:-Qwen/Qwen3-Embedding-0.6B}
+      EMBEDDING_MODEL_REVISION: ${EMBEDDING_MODEL_REVISION:-97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3}
+      EMBEDDING_TOKEN: ${EMBEDDING_TOKEN:-}
+      NVIDIA_VISIBLE_DEVICES: all
+    volumes:
+      - ${AI_RUNTIME_ROOT:-.runtime}/logs/embedding:/var/log/aiexam
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:18081/health')"]
+      interval: 20s
+      timeout: 12s
+      retries: 12
+
+  qdrant:
+    image: qdrant/qdrant:v1.14.1
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - ${AI_RUNTIME_ROOT:-.runtime}/qdrant:/qdrant/storage
+    healthcheck:
+      test: ["NONE"]
+
+  backend:
+    depends_on:
+      ocr:
+        condition: service_healthy
+      embedding:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    environment:
+      OCR_ENDPOINT: http://ocr:18080/ocr
+      OCR_TOKEN: ${OCR_TOKEN:-}
+      EMBEDDING_ENDPOINT: http://embedding:18081/v1/embeddings
+      EMBEDDING_TOKEN: ${EMBEDDING_TOKEN:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL_ID:-Qwen/Qwen3-Embedding-0.6B}
+      EMBEDDING_REVISION: ${EMBEDDING_MODEL_REVISION:-97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3}
+      QDRANT_ENDPOINT: http://qdrant:6333
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-knowledge_published_qwen3_97b0c614}

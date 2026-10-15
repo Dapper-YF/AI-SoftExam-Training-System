@@ -1,0 +1,143 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: ai-exam-platform
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+  datasource:
+    url: jdbc:h2:mem:ai_exam_platform_bootstrap;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
+  flyway:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  pattern:
+    level: "%5p [traceId:%X{traceId}]"
+
+aiexam:
+  auth:
+    registration:
+      verification-required: ${AIEXAM_AUTH_REGISTRATION_VERIFICATION_REQUIRED:true}
+    challenge:
+      dev-delivery:
+        enabled: ${AIEXAM_AUTH_CHALLENGE_DEV_DELIVERY_ENABLED:false}
+      tencent-sms:
+        enabled: ${TENCENT_SMS_ENABLED:false}
+        secret-id: ${TENCENTCLOUD_SECRET_ID:}
+        secret-key: ${TENCENTCLOUD_SECRET_KEY:}
+        sdk-app-id: ${TENCENT_SMS_SDK_APP_ID:}
+        sign-name: ${TENCENT_SMS_SIGN_NAME:}
+        template-id: ${TENCENT_SMS_TEMPLATE_ID:}
+        region: ${TENCENT_SMS_REGION:ap-guangzhou}
+    dev-accounts:
+      enabled: false
+    dev-seed-username-login:
+      enabled: false
+  question-import:
+    # Fail closed when unset. Point this only at a directory containing reviewed preflight evidence.
+    allowed-root: ${QUESTION_IMPORT_ALLOWED_ROOT:}
+  question-assets:
+    # Public question images are served only from this configured local directory.
+    root: ${QUESTION_IMAGE_ROOT:}
+  learning-resource:
+    file-root: ${LEARNING_RESOURCE_FILE_ROOT:./var/learning-resources}
+  ai-assistant:
+    dashscope-api-key: ${DASHSCOPE_API_KEY:}
+    dashscope-model: ${DASHSCOPE_MODEL:qwen-plus}
+    answer-provider: ${AI_ASSISTANT_ANSWER_PROVIDER:deepseek}
+    deepseek-api-key: ${DEEPSEEK_API_KEY:}
+    deepseek-base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+    deepseek-model: ${DEEPSEEK_MODEL:deepseek-v4-flash}
+    # OCR_ENDPOINT points to the internal OCR gateway responsible for Alibaba Cloud RAM signing.
+    ocr-endpoint: ${OCR_ENDPOINT:}
+    ocr-token: ${OCR_TOKEN:}
+    embedding-endpoint: ${EMBEDDING_ENDPOINT:}
+    embedding-token: ${EMBEDDING_TOKEN:}
+    embedding-model: ${EMBEDDING_MODEL:Qwen/Qwen3-Embedding-0.6B}
+    embedding-revision: ${EMBEDDING_REVISION:}
+    qdrant-endpoint: ${QDRANT_ENDPOINT:}
+    qdrant-collection: ${QDRANT_COLLECTION:knowledge_published}
+    upload-root: ${AI_ASSISTANT_UPLOAD_ROOT:./var/ai-assistant}
+    max-image-bytes: ${AI_ASSISTANT_MAX_IMAGE_BYTES:10485760}
+    max-image-pixels: ${AI_ASSISTANT_MAX_IMAGE_PIXELS:24000000}
+    request-timeout-seconds: ${AI_ASSISTANT_REQUEST_TIMEOUT_SECONDS:30}
+    max-retries: ${AI_ASSISTANT_MAX_RETRIES:1}
+    max-requests-per-minute: ${AI_ASSISTANT_MAX_REQUESTS_PER_MINUTE:30}
+    rag-vector-min-score: ${AI_ASSISTANT_RAG_VECTOR_MIN_SCORE:0.70}
+    rag-vector-card-min-score: ${AI_ASSISTANT_RAG_VECTOR_CARD_MIN_SCORE:0.60}
+    rag-bm25-min-score: ${AI_ASSISTANT_RAG_BM25_MIN_SCORE:1.0}
+    rag-min-score-margin: ${AI_ASSISTANT_RAG_MIN_SCORE_MARGIN:0.0}
+    rag-candidate-top-k: ${AI_ASSISTANT_RAG_CANDIDATE_TOP_K:20}
+    rag-rrf-k: ${AI_ASSISTANT_RAG_RRF_K:60}
+    rag-bm25-weight: ${AI_ASSISTANT_RAG_BM25_WEIGHT:1.0}
+    rag-vector-weight: ${AI_ASSISTANT_RAG_VECTOR_WEIGHT:1.05}
+    conversation-retention-days: ${AI_ASSISTANT_CONVERSATION_RETENTION_DAYS:7}
+    attachment-retention-hours: ${AI_ASSISTANT_ATTACHMENT_RETENTION_HOURS:24}
+  portal:
+    crawler:
+      enabled: ${PORTAL_CRAWLER_ENABLED:true}
+      cron: ${PORTAL_CRAWLER_CRON:0 10 0 * * *}
+      zone-id: ${PORTAL_CRAWLER_ZONE_ID:Asia/Shanghai}
+      list-url: ${PORTAL_CRAWLER_LIST_URL:https://www.ruankao.org.cn/}
+      allowed-host: ${PORTAL_CRAWLER_ALLOWED_HOST:www.ruankao.org.cn}
+      initial-lookback-days: ${PORTAL_CRAWLER_INITIAL_LOOKBACK_DAYS:365}
+      max-items-per-run: ${PORTAL_CRAWLER_MAX_ITEMS_PER_RUN:160}
+      request-delay-millis: ${PORTAL_CRAWLER_REQUEST_DELAY_MILLIS:500}
+      source-urls:
+        - ${PORTAL_CRAWLER_SOURCE_URL_1:https://www.ruankao.org.cn/}
+        - ${PORTAL_CRAWLER_SOURCE_URL_2:https://rsks.gd.gov.cn/}
+        - ${PORTAL_CRAWLER_SOURCE_URL_3:https://ks.rst.gansu.gov.cn/ncms/index.shtml}
+        - ${PORTAL_CRAWLER_SOURCE_URL_4:https://rsj.beijing.gov.cn/ywsite/bjpta/}
+      allowed-hosts:
+        - ${PORTAL_CRAWLER_ALLOWED_HOST_1:www.ruankao.org.cn}
+        - ${PORTAL_CRAWLER_ALLOWED_HOST_2:rsks.gd.gov.cn}
+        - ${PORTAL_CRAWLER_ALLOWED_HOST_3:ks.rst.gansu.gov.cn}
+        - ${PORTAL_CRAWLER_ALLOWED_HOST_4:rsj.beijing.gov.cn}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: mysql
+  datasource:
+    url: ${MYSQL_URL}
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: ${DB_MAX_POOL_SIZE:30}
+      minimum-idle: ${DB_MIN_IDLE:5}
+  flyway:
+    enabled: false
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true

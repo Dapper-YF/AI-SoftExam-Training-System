@@ -1,0 +1,90 @@
+:root {
+  font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+  color: #1f2937;
+  background: #f5f7fa;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --exam-blue: #168de2;
+  --exam-blue-dark: #0877c6;
+  --exam-blue-soft: #eaf6ff;
+  --exam-orange: #ff9800;
+  --exam-border: #d7dee7;
+  --exam-muted: #667085;
+  --el-border-radius-base: 4px;
+  --el-border-radius-small: 3px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body.exam-app-active.exam-app-desktop-stage,
+body.exam-app-active.exam-app-desktop-stage #app {
+  min-width: 1180px;
+  height: 100%;
+  overflow: hidden;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #ff9800;
+  outline-offset: 2px;
+}
+
+.el-input__inner:focus-visible {
+  outline: 0;
+}
+
+.el-input__wrapper:has(.el-input__inner:focus-visible) {
+  outline: 2px solid var(--exam-orange);
+  outline-offset: 2px;
+}
+
+.screen-page {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: #f7f8fa;
+}
+
+.exam-action-button.el-button {
+  min-width: 150px;
+  height: 50px;
+  border-radius: 2px;
+  font-size: 18px;
+}
+
+.exam-action-button--orange.el-button {
+  border-color: #ff9800;
+  background: #ff9800;
+  color: #fff;
+}
+
+.exam-action-button--orange.el-button:hover,
+.exam-action-button--orange.el-button:focus {
+  border-color: #e98b00;
+  background: #e98b00;
+  color: #fff;
+}

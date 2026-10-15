@@ -39,36 +39,52 @@ flowchart LR
 
 ## 本地运行
 
-准备 JDK 17、Maven 3.9，以及 Node.js 22.19 / npm 10.9。所有命令在本仓库目录执行，不依赖作者电脑的绝对路径。
+### 推荐运行方式：Docker Compose
 
-### 1. 构建后端（已验证）
+项目实际以名为 `ai` 的 Docker Compose 项目运行，并非单独启动默认 H2 配置的 JAR。组合配置如下：
+
+- `docker-compose.dev.yml`：MySQL、Redis、后端与前端。
+- `docker-compose.knowledge-gpu.yml`：OCR、Embedding 与 Qdrant；其中 OCR / Embedding 需要 NVIDIA GPU 环境。
+
+后端容器名为 `ai-exam-backend-dev`，前端为 `ai-exam-frontend-dev`，数据库为 `ai-exam-mysql-dev`。
+
+**已有本地环境**可在原项目目录启动已创建的服务（保留既有镜像和数据卷）：
 
 ```powershell
-cd backend
+docker compose -p ai -f docker-compose.dev.yml -f docker-compose.knowledge-gpu.yml start
+```
+
+启动后访问：
+
+| 入口 | 地址 |
+| --- | --- |
+| Web | http://127.0.0.1:5173 |
+| API | http://127.0.0.1:8000 |
+| MySQL | 127.0.0.1:33307 |
+| OCR / Embedding | 127.0.0.1:18080 / 18081 |
+
+`start` 启动已有容器，不重建镜像、不初始化新环境。首次从 GitHub 克隆的使用者需要先准备自己的环境变量、符合当前版本的 MySQL 表结构及合成演示数据，再使用相同配置执行 `up --build`。公开版没有包含企业已有数据卷和内部初始化数据，不能把作者电脑上已有环境的启动方式当作全新环境的一键安装。
+
+### 源码构建与开发
+
+准备 JDK 17、Maven 3.9，以及 Node.js 22.19 / npm 10.9。在 `backend` 目录执行：
+
+```powershell
 mvn -DskipTests package
 ```
 
-2026-10-15 已在隔离副本完成 Maven 打包，七个模块均构建成功（跳过测试）。构建产物为 `platform-application/target/platform-application-0.1.0-SNAPSHOT.jar`。
+2026-10-15 已在隔离副本完成七个 Maven 模块打包（跳过测试）。`docker/backend/Dockerfile` 也从源码构建 JAR，无需作者本地的预编译产物。
 
-**当前公开版存在启动前置条件**：默认 H2 配置未提供完整认证表结构，直接运行 JAR 的实测结果为 `AUTH_V13_SCHEMA_NOT_READY`。因此此处不承诺无配置启动；必须先准备符合当前版本的数据库结构与初始化数据。
-
-数据库准备完成后，使用 `java -jar platform-application/target/platform-application-0.1.0-SNAPSHOT.jar --spring.profiles.active=mysql` 启动，API 默认端口为 `8000`。
-
-完整业务需要 MySQL、迁移与初始化数据；`mysql` profile 读取 `MYSQL_URL`、`MYSQL_USERNAME`、`MYSQL_PASSWORD`，需要按 [后端说明](backend/README.md)配置。模型、OCR、Embedding 和 Qdrant 为独立服务，使用自己的凭证与数据。公开版的最小合成数据初始化流程仍待补齐，当前需按项目环境文档自行完成数据库准备。
-
-### 2. 启动前端
-
-在新终端执行：
+前端本地开发可在 `frontend` 目录执行：
 
 ```powershell
-cd frontend
 npm ci
 npm run dev
 ```
 
-访问 `http://127.0.0.1:5173`。Vite 默认将 `/api` 转发到本机 `8000`；数据和 AI 功能需要对应后端服务就绪。
+Vite 默认将 `/api` 转发到本机 `8000`。模型、OCR、Embedding、Qdrant 与 MySQL 的配置应与选定的 Docker / 开发环境保持一致。
 
-### 3. 测试入口
+### 测试与运行验证范围
 
 ```powershell
 # 后端，backend 目录
@@ -79,7 +95,9 @@ npm test
 npm run build
 ```
 
-MySQL 测试必须使用独立的 `_test` 数据库及 `MYSQL_TEST_*` 配置。部分测试依赖外部环境，详见 [后端运行与测试说明](backend/README.md)。此处列出命令，不代表本次发布运行了全部测试。
+MySQL 测试必须使用独立的 `_test` 数据库及 `MYSQL_TEST_*`，详见 [后端说明](backend/README.md)。本次公开整理验证了源码打包，并核对现有 Docker 的 Compose 来源、持久化 MySQL 配置和保留日志中的后端成功启动记录；未启动或重建现有容器，未重新验收全部业务。
+
+单独用默认 H2 配置启动 JAR 的隔离测试出现 `AUTH_V13_SCHEMA_NOT_READY`。这反映该独立启动方式缺少认证表结构，**不代表 Docker / MySQL 环境存在同一故障**。新环境的合成数据初始化与完整复现说明仍待补齐。
 
 ## 演示与验证材料
 
@@ -88,7 +106,7 @@ MySQL 测试必须使用独立的 `_test` 数据库及 `MYSQL_TEST_*` 配置。�
 ## 公开范围与当前限制
 
 - 不包含企业数据库、真实用户记录、凭证、教材原文、第三方题库、上传附件及预编译 JAR。
-- 原开发环境 Compose 依赖内部初始化资料，公开仓库不保证一条 Compose 命令完成全业务复现。默认 H2 启动缺少 V13 认证表结构，已明确记录，后续需补合成演示数据初始化。
+- Docker 是项目实际运行方式；公开仓库不包含作者已有 MySQL 数据卷，新环境需准备表结构与合成演示数据，完整复现流程仍待补齐。
 - `docker/backend/Dockerfile` 从源码构建 JAR，无需作者本地的 `backend/deploy` 产物。
 - 原始数据与第三方服务未配置时，相关能力不可用；请提供具有使用权限的样例数据。
 - 本仓库展示源码，不代表向第三方数据和企业素材授予使用许可。

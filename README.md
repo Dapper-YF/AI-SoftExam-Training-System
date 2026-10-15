@@ -41,17 +41,20 @@ flowchart LR
 
 准备 JDK 17、Maven 3.9，以及 Node.js 22.19 / npm 10.9。所有命令在本仓库目录执行，不依赖作者电脑的绝对路径。
 
-### 1. 构建后端
+### 1. 构建后端（已验证）
 
 ```powershell
 cd backend
 mvn -DskipTests package
-java -jar platform-application/target/platform-application-0.1.0-SNAPSHOT.jar
 ```
 
-默认配置使用内存 H2、关闭 Flyway，用于最小启动检查；**不能据此认定完整业务已可用**。API 默认端口为 `8000`，可检查 `http://127.0.0.1:8000/actuator/health`。
+2026-10-15 已在隔离副本完成 Maven 打包，七个模块均构建成功（跳过测试）。构建产物为 `platform-application/target/platform-application-0.1.0-SNAPSHOT.jar`。
 
-完整业务需要 MySQL、迁移与初始化数据；`mysql` profile 读取 `MYSQL_URL`、`MYSQL_USERNAME`、`MYSQL_PASSWORD`，需要按 [后端说明](backend/README.md)配置。模型、OCR、Embedding 和 Qdrant 为独立服务，使用自己的凭证与数据。先查阅源码配置，勿将内存启动模式当作企业部署方案。
+**当前公开版存在启动前置条件**：默认 H2 配置未提供完整认证表结构，直接运行 JAR 的实测结果为 `AUTH_V13_SCHEMA_NOT_READY`。因此此处不承诺无配置启动；必须先准备符合当前版本的数据库结构与初始化数据。
+
+数据库准备完成后，使用 `java -jar platform-application/target/platform-application-0.1.0-SNAPSHOT.jar --spring.profiles.active=mysql` 启动，API 默认端口为 `8000`。
+
+完整业务需要 MySQL、迁移与初始化数据；`mysql` profile 读取 `MYSQL_URL`、`MYSQL_USERNAME`、`MYSQL_PASSWORD`，需要按 [后端说明](backend/README.md)配置。模型、OCR、Embedding 和 Qdrant 为独立服务，使用自己的凭证与数据。公开版的最小合成数据初始化流程仍待补齐，当前需按项目环境文档自行完成数据库准备。
 
 ### 2. 启动前端
 
@@ -85,7 +88,7 @@ MySQL 测试必须使用独立的 `_test` 数据库及 `MYSQL_TEST_*` 配置。�
 ## 公开范围与当前限制
 
 - 不包含企业数据库、真实用户记录、凭证、教材原文、第三方题库、上传附件及预编译 JAR。
-- 原开发环境 Compose 依赖内部初始化资料，公开仓库不保证一条 Compose 命令完成全业务复现。
+- 原开发环境 Compose 依赖内部初始化资料，公开仓库不保证一条 Compose 命令完成全业务复现。默认 H2 启动缺少 V13 认证表结构，已明确记录，后续需补合成演示数据初始化。
 - `docker/backend/Dockerfile` 从源码构建 JAR，无需作者本地的 `backend/deploy` 产物。
 - 原始数据与第三方服务未配置时，相关能力不可用；请提供具有使用权限的样例数据。
 - 本仓库展示源码，不代表向第三方数据和企业素材授予使用许可。
